@@ -1,4 +1,4 @@
-package jp.dressingroom.gameserver.apiguard.entity;
+package jp.dressingroom.apiguard.onetimetoken.verticle;
 
 public class RequestedPayload {
   UserId userId;

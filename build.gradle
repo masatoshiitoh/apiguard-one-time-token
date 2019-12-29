@@ -9,6 +9,7 @@ version = '1.0.0-SNAPSHOT'
 
 repositories {
   mavenCentral()
+  maven {url 'https://github.com/masatoshiitoh/http-responder/raw/master/' }
 }
 
 ext {
@@ -25,7 +26,7 @@ compileTestJava.options.encoding = 'UTF-8'
 
 sourceCompatibility = '1.8'
 
-def mainVerticleName = 'jp.dressingroom.gameserver.apiguard.MainVerticle'
+def mainVerticleName = 'jp.dressingroom.apiguard.onetimetoken.OnetimeTokenMainVerticle'
 def watchForChange = 'src/**/*'
 def doOnChange = './gradlew classes'
 
@@ -35,10 +36,13 @@ dependencies {
   implementation "io.vertx:vertx-redis-client:$vertxVersion"
 
   compile "io.vertx:vertx-web-client:$vertxVersion"
+  compile "io.vertx:vertx-config:$vertxVersion"
 
   testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+  testImplementation "io.vertx:vertx-unit:$vertxVersion"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
   testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
+  testImplementation 'jp.dressingroom.apiguard:Mavenrepobygradle:1.0.0-SNAPSHOT'
 }
 
 

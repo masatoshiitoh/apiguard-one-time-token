@@ -1,34 +1,54 @@
-package jp.dressingroom.gameserver.apiguard.verticle.service;
+package jp.dressingroom.apiguard.onetimetoken.verticle;
 
+import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonObject;
+import io.vertx.redis.client.RedisOptions;
 import io.vertx.redis.client.Redis;
 import io.vertx.redis.client.RedisAPI;
-import jp.dressingroom.gameserver.apiguard.entity.RedisGetRequest;
-import jp.dressingroom.gameserver.apiguard.entity.RedisSetExRequest;
-import jp.dressingroom.gameserver.apiguard.verticle.ApiguardEventBusNames;
+import jp.dressingroom.apiguard.onetimetoken.ConfigKeyNames;
 
 public class RedisVerticle extends AbstractVerticle {
   Redis redisClient;
 
+  String redisHost;
+  int redisPort;
+
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
-    EventBus eventBus = vertx.eventBus();
-    eventBus.consumer(ApiguardEventBusNames.REDIS_GET.value(), redisGetHandler());
-    eventBus.consumer(ApiguardEventBusNames.REDIS_SETEX.value(), redisSetExHandler());
 
-    Redis.createClient(vertx, new io.vertx.redis.client.RedisOptions())
-      .connect(onConnect -> {
-        if (onConnect.succeeded()) {
-          redisClient = onConnect.result();
-          startPromise.complete();
-        } else {
-          startPromise.fail(this.getClass().getName() + ": redis connection failed");
-        }
-      });
+
+    ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
+    configRetriever.getConfig((json -> {
+      try {
+        JsonObject result = json.result();
+
+        EventBus eventBus = vertx.eventBus();
+        eventBus.consumer(ApiguardEventBusNames.REDIS_GET.value(), redisGetHandler());
+        eventBus.consumer(ApiguardEventBusNames.REDIS_SETEX.value(), redisSetExHandler());
+
+        RedisOptions redisOptions = new RedisOptions();
+
+        redisHost = result.getString(ConfigKeyNames.ONETIME_TOKEN_REDIS_HOSTNAME.value(), "localhost");
+        redisPort = result.getInteger(ConfigKeyNames.ONETIME_TOKEN_REDIS_PORT.value(), 6379);
+
+        Redis.createClient(vertx, redisOptions)
+          .connect(onConnect -> {
+            if (onConnect.succeeded()) {
+              redisClient = onConnect.result();
+              startPromise.complete();
+            } else {
+              startPromise.fail(this.getClass().getName() + ": redis connection failed");
+            }
+          });
+      } catch (Exception e) {
+        startPromise.fail(e);
+      }
+    }));
   }
 
   // get handler

@@ -1,4 +1,4 @@
-package jp.dressingroom.gameserver.apiguard;
+package jp.dressingroom.apiguard.onetimetoken;
 
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -7,16 +7,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
-public class TestMainVerticle {
+public class TestOnetimeTokenMainVerticle {
 
   @BeforeEach
   void deployVerticle(Vertx vertx, VertxTestContext testContext) {
-    vertx.deployVerticle(new MainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
+
+    System.setProperty("server.port","18888");
+    System.setProperty("onetimetoken.server.port","18889");
+    System.setProperty("onetimetoken.proxy.port","18888");
+
+    vertx.deployVerticle(new OnetimeTokenMainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
   }
 
   @Test
