@@ -43,6 +43,7 @@ dependencies {
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
   testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
   testImplementation 'jp.dressingroom.apiguard:Mavenrepobygradle:1.0.0-SNAPSHOT'
+  testImplementation 'it.ozimov:embedded-redis:0.7.1'
 }
 
 
