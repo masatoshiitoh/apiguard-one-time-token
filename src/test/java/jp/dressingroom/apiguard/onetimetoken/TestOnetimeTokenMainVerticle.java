@@ -1,9 +1,7 @@
 package jp.dressingroom.apiguard.onetimetoken;
 
 import io.vertx.config.ConfigRetriever;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.client.WebClient;
@@ -14,7 +12,6 @@ import io.vertx.redis.client.Redis;
 import io.vertx.redis.client.RedisAPI;
 import io.vertx.redis.client.RedisOptions;
 import jp.dressingroom.apiguard.httpresponder.HttpResponderMainVerticle;
-import jp.dressingroom.apiguard.onetimetoken.verticle.RedisSetExRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
