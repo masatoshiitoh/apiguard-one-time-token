@@ -16,6 +16,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import jp.dressingroom.apiguard.onetimetoken.ConfigKeyNames;
 
+import java.util.List;
 
 public class HttpReverseProxyVerticle extends AbstractVerticle {
   WebClient client;
@@ -23,6 +24,10 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
   String proxyUserAgent;
   int proxyPort;
   Boolean proxyUseSsl;
+
+  List<String> guardMethods;
+  List<String> pathsWithoutToken;
+  String userIdParamName;
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
