@@ -16,6 +16,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import jp.dressingroom.apiguard.onetimetoken.ConfigKeyNames;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class HttpReverseProxyVerticle extends AbstractVerticle {
@@ -35,6 +36,13 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
     configRetriever.getConfig(json -> {
       try {
         JsonObject result = json.result();
+
+        // setup onetime token guard
+        String methodsConfig= result.getString(ConfigKeyNames.ONETIME_TOKEN_GUARD_METHODS.value(), "GET,POST");
+        String initializePathsConfig= result.getString(ConfigKeyNames.ONETIME_TOKEN_INITIALIZE_PATHS.value(), "/login,/init");
+        Arrays.stream(methodsConfig.split(",")).forEach(s -> guardMethods.add(s));
+        Arrays.stream(initializePathsConfig.split(",")).forEach(s -> pathsWithoutToken.add(s));
+        userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "opensocial_owner_id");
 
         // setup proxy client
         proxyHost = result.getString(ConfigKeyNames.ONETIME_TOKEN_PROXY_HOSTNAME.value(), "localhost");

@@ -10,6 +10,9 @@ public enum ConfigKeyNames {
 
   ONETIME_TOKEN_REDIS_HOSTNAME("onetimetoken.redis.hostname"),
   ONETIME_TOKEN_REDIS_PORT("onetimetoken.redis.port"),
+  ONETIME_TOKEN_GUARD_METHODS("onetimetoken.guard.methods"),
+  ONETIME_TOKEN_INITIALIZE_PATHS("onetimetoken.initialize.paths"),
+  ONETIME_TOKEN_USER_ID_PARAM_NAME("onetimetoken.userid.parameter"),
   ;
 
   private final String text;

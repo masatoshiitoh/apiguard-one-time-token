@@ -38,6 +38,10 @@ public class TestOnetimeTokenMainVerticle {
     System.setProperty("onetimetoken.redis.hostname", "localhost");
     System.setProperty("onetimetoken.redis.port", "6379");
 
+    System.setProperty("onetimetoken.guard.methods", "GET,POST");
+    System.setProperty("onetimetoken.initialize.paths", "/login,/relogin");
+    System.setProperty("onetimetoken.userid.parameter", "opensocial_owner_id");
+
     vertx.deployVerticle(new HttpResponderMainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
     vertx.deployVerticle(new OnetimeTokenMainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
   }
@@ -122,7 +126,7 @@ public class TestOnetimeTokenMainVerticle {
                                 testContext.completeNow();
                               }
                             });
-                          } else {
+                        } else {
                           assertTrue(false, "setExResult returns fail.");
                           testContext.completeNow();
                         }
@@ -142,4 +146,19 @@ public class TestOnetimeTokenMainVerticle {
       }
     });
   }
+
+  @Test
+  void onetimeTokenMethodGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.get(18891, "localhost", "/login")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200);
+        assertTrue(response.headers().contains("guardtoken"));
+        assertTrue(response.headers().get("guardtoken").equals("true"));
+        testContext.completeNow();
+      })));
+  }
+
 }
