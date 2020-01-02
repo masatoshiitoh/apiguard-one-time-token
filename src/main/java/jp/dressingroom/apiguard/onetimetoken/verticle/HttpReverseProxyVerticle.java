@@ -42,7 +42,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
         Arrays.stream(methodsConfig.split(",")).forEach(s -> guardMethods.add(s));
         Arrays.stream(initializePathsConfig.split(",")).forEach(s -> pathsWithoutToken.add(s));
-        userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "opensocial_owner_id");
+        userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "userid");
 
         // setup proxy client
         proxyHost = result.getString(ConfigKeyNames.ONETIME_TOKEN_PROXY_HOSTNAME.value(), "localhost");
@@ -102,6 +102,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                   HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
 
                   responseToRequestor.headers().setAll(responseFromOrigin.headers());
+                  responseToRequestor.headers().add("guardtoken", "none");
                   if (originRequest.result().body() != null) {
                     responseToRequestor.write(originRequest.result().body());
                   }
@@ -109,6 +110,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                     .setStatusCode(originRequest.result().statusCode())
                     .end();
                 } else {
+                  responseToRequestor.headers().add("guardtoken", "none");
                   responseToRequestor
                     .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
                     .end("Origin request failed.");
