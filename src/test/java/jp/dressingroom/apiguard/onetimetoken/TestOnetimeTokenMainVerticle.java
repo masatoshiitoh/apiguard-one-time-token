@@ -39,7 +39,7 @@ public class TestOnetimeTokenMainVerticle {
     System.setProperty("onetimetoken.redis.port", "6379");
 
     System.setProperty("onetimetoken.guard.methods", "GET,POST");
-    System.setProperty("onetimetoken.initialize.paths", "/login,/relogin");
+    System.setProperty("onetimetoken.initialize.paths", "/init,/reinit");
     System.setProperty("onetimetoken.userid.parameter", "opensocial_owner_id");
 
     vertx.deployVerticle(new HttpResponderMainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
@@ -146,12 +146,47 @@ public class TestOnetimeTokenMainVerticle {
       }
     });
   }
+  @Test
+  void onetimeTokenGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.get(18891, "localhost", "/init")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200);
+        assertTrue(response.headers().contains("guardtoken"));
+        assertTrue(response.headers().get("guardtoken").equals("true"));
+
+        client.get(18891, "localhost", "/api")
+          .as(BodyCodec.string())
+          .send(testContext.succeeding(response -> testContext.verify(() -> {
+            assertTrue(response.statusCode() == 200);
+            assertTrue(response.headers().contains("guardtoken"));
+            assertTrue(response.headers().get("guardtoken").equals("true"));
+
+            client.get(18891, "localhost", "/api")
+              .as(BodyCodec.string())
+              .send(testContext.succeeding(response -> testContext.verify(() -> {
+                assertTrue(response.statusCode() == 200);
+                assertTrue(response.headers().contains("guardtoken"));
+                assertTrue(response.headers().get("guardtoken").equals("true"));
+                testContext.completeNow();
+              })));
+
+
+            testContext.completeNow();
+          })));
+
+
+        testContext.completeNow();
+      })));
+  }
 
   @Test
   void onetimeTokenMethodGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
 
-    client.get(18891, "localhost", "/login")
+    client.get(18891, "localhost", "/init")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
         assertTrue(response.statusCode() == 200);
