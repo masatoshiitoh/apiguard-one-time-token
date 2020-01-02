@@ -16,8 +16,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import jp.dressingroom.apiguard.onetimetoken.ConfigKeyNames;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class HttpReverseProxyVerticle extends AbstractVerticle {
   WebClient client;
@@ -26,8 +25,8 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
   int proxyPort;
   Boolean proxyUseSsl;
 
-  List<String> guardMethods;
-  List<String> pathsWithoutToken;
+  List<String> guardMethods = new ArrayList<>();
+  List<String> pathsWithoutToken = new ArrayList<>();
   String userIdParamName;
 
   @Override
@@ -40,6 +39,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         // setup onetime token guard
         String methodsConfig= result.getString(ConfigKeyNames.ONETIME_TOKEN_GUARD_METHODS.value(), "GET,POST");
         String initializePathsConfig= result.getString(ConfigKeyNames.ONETIME_TOKEN_INITIALIZE_PATHS.value(), "/login,/init");
+
         Arrays.stream(methodsConfig.split(",")).forEach(s -> guardMethods.add(s));
         Arrays.stream(initializePathsConfig.split(",")).forEach(s -> pathsWithoutToken.add(s));
         userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "opensocial_owner_id");
@@ -54,7 +54,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         webClientOptions.setUserAgent(proxyUserAgent);
         client = WebClient.create((Vertx) vertx, webClientOptions);
 
-        Integer port = result.getInteger(ConfigKeyNames.ONETIME_TOKEN_SERVER_PORT.value());
+        Integer port = result.getInteger(ConfigKeyNames.ONETIME_TOKEN_SERVER_PORT.value(), 8891);
         HttpServer server = vertx.createHttpServer();
         Router router = Router.router(vertx);
 

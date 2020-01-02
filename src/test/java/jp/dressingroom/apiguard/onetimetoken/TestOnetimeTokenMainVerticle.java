@@ -80,19 +80,19 @@ public class TestOnetimeTokenMainVerticle {
       })));
   }
 
-//  @Test
-//  void onetimeTokenHttpReverseProxyDeployed(Vertx vertx, VertxTestContext testContext) throws Throwable {
-//    WebClient client = WebClient.create(vertx);
-//
-//    client.get(18891, "localhost", "/")
-//      .as(BodyCodec.string())
-//      .send(testContext.succeeding(response -> testContext.verify(() -> {
-//        assertTrue(response.statusCode() == 200);
-//        assertTrue(response.headers().contains("httpresponder"));
-//        assertTrue(response.headers().get("httpresponder").equals("true"));
-//        testContext.completeNow();
-//      })));
-//  }
+  @Test
+  void onetimeTokenHttpReverseProxyDeployed(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.get(18891, "localhost", "/")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200);
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
+        testContext.completeNow();
+      })));
+  }
 
   @Test
   void redisServerDeployed(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -155,56 +155,56 @@ public class TestOnetimeTokenMainVerticle {
       }
     });
   }
-//  @Test
-//  void onetimeTokenGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
-//    WebClient client = WebClient.create(vertx);
-//
-//    client.get(18891, "localhost", "/init")
-//      .as(BodyCodec.string())
-//      .send(testContext.succeeding(r1 -> testContext.verify(() -> {
-//        System.out.println("r1:" + r1.body());
-//
-//        assertTrue(r1.statusCode() == 200);
-//        assertTrue(r1.headers().contains("guardtoken"));
-//        assertTrue(r1.headers().get("guardtoken").equals("true"));
-//
-//
-//        client.get(18891, "localhost", "/api")
-//          .as(BodyCodec.string())
-//          .send(testContext.succeeding(r2 -> testContext.verify(() -> {
-//            System.out.println("r2:" + r2.body());
-//
-//            assertTrue(r2.statusCode() == 200);
-//            assertTrue(r2.headers().contains("guardtoken"));
-//            assertTrue(r2.headers().get("guardtoken").equals("true"));
-//
-//            client.get(18891, "localhost", "/api")
-//              .as(BodyCodec.string())
-//              .send(testContext.succeeding(r3 -> testContext.verify(() -> {
-//                System.out.println("r3:" + r3.body());
-//
-//                assertTrue(r3.statusCode() == 200);
-//                assertTrue(r3.headers().contains("guardtoken"));
-//                assertTrue(r3.headers().get("guardtoken").equals("true"));
-//
-//                testContext.completeNow();
-//              })));
-//          })));
-//      })));
-//  }
+  @Test
+  void onetimeTokenGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
 
-//  @Test
-//  void onetimeTokenMethodGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
-//    WebClient client = WebClient.create(vertx);
-//
-//    client.get(18891, "localhost", "/init")
-//      .as(BodyCodec.string())
-//      .send(testContext.succeeding(response -> testContext.verify(() -> {
-//        assertTrue(response.statusCode() == 200);
-//        assertTrue(response.headers().contains("guardtoken"));
-//        assertTrue(response.headers().get("guardtoken").equals("true"));
-//        testContext.completeNow();
-//      })));
-//  }
+    client.get(18891, "localhost", "/init")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(r1 -> testContext.verify(() -> {
+        System.out.println("r1:" + r1.body());
+
+        assertTrue(r1.statusCode() == 200);
+        assertTrue(r1.headers().contains("guardtoken"));
+        assertTrue(r1.headers().get("guardtoken").equals("true"));
+
+
+        client.get(18891, "localhost", "/api")
+          .as(BodyCodec.string())
+          .send(testContext.succeeding(r2 -> testContext.verify(() -> {
+            System.out.println("r2:" + r2.body());
+
+            assertTrue(r2.statusCode() == 200);
+            assertTrue(r2.headers().contains("guardtoken"));
+            assertTrue(r2.headers().get("guardtoken").equals("true"));
+
+            client.get(18891, "localhost", "/api")
+              .as(BodyCodec.string())
+              .send(testContext.succeeding(r3 -> testContext.verify(() -> {
+                System.out.println("r3:" + r3.body());
+
+                assertTrue(r3.statusCode() == 200);
+                assertTrue(r3.headers().contains("guardtoken"));
+                assertTrue(r3.headers().get("guardtoken").equals("true"));
+
+                testContext.completeNow();
+              })));
+          })));
+      })));
+  }
+
+  @Test
+  void onetimeTokenMethodGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.get(18891, "localhost", "/init")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200);
+        assertTrue(response.headers().contains("guardtoken"));
+        assertTrue(response.headers().get("guardtoken").equals("true"));
+        testContext.completeNow();
+      })));
+  }
 
 }
