@@ -3,6 +3,7 @@ package jp.dressingroom.apiguard.onetimetoken.verticle;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
@@ -82,11 +83,14 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
     return requestOptions;
   }
-  
+
 
   private Handler<RoutingContext> proxyHandler() {
     return requestorContext -> {
+
       requestorContext.request().bodyHandler(bodiedProxyHandler -> {
+          EventBus eventBus = vertx.eventBus();
+
           HttpMethod method = requestorContext.request().method();
           String path = requestorContext.request().path();
           String userId = requestorContext.request().getParam(userIdParamName);
@@ -98,17 +102,45 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
               if (pathsWithoutToken.contains(path)) {
                 // initialize token to the user.
                 System.out.println("OnetimeToken: reset token for " + userId);
+
+                eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_RESET.value(), userId, resetRequest -> {
+                  // call proxy, return 200, and reset user's token (not 200, don't change token)
+                });
+
               } else {
                 // rotate token.
-                System.out.println("OnetimeToken: update token for " + userId);
+                System.out.println("OnetimeToken: verify token for " + userId);
+                eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_VERIFY.value(), userId, verifyRequest -> {
+                  // verify token
+                  if (verifyRequest.succeeded()) {
+                    if (verifyRequest.result().equals(new Boolean(true))) {
+                      // verify ok
+
+                      // call proxy, return 200, and reset user's token (not 200, don't change token)
+                      System.out.println("OnetimeToken: update token for " + userId);
+                      eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_UPDATE.value(), userId, resetRequest -> {
+                      });
+                    } else {
+                      // not valid token!
+                      // return BAD REQUEST!!
+                    }
+                  }
+                });
+
               }
             } else {
               // this request not be guarded.
               System.out.println("OnetimeToken: ignore method " + method.name());
+
+              // just proxy it.
+              // don't change token.
             }
           } else {
             // user id missing.
             System.out.println("OnetimeToken: user id missing");
+
+            // return BAD REQUEST
+            // don't change any token.
           }
 
           RequestOptions requestOptions = copyFromRequest(requestorContext);
@@ -144,4 +176,6 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
       );
     };
   }
+
+  // void proxyRequester(method, port, )
 }
