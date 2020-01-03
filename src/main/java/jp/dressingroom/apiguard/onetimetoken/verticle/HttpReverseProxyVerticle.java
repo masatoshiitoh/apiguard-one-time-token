@@ -82,11 +82,35 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
     return requestOptions;
   }
+  
 
   private Handler<RoutingContext> proxyHandler() {
     return requestorContext -> {
       requestorContext.request().bodyHandler(bodiedProxyHandler -> {
           HttpMethod method = requestorContext.request().method();
+          String path = requestorContext.request().path();
+          String userId = requestorContext.request().getParam(userIdParamName);
+
+          if (userId != null) {
+            // user id is passed by requester.
+            if (guardMethods.contains(method)) {
+              // this request must be guarded with onetime token.
+              if (pathsWithoutToken.contains(path)) {
+                // initialize token to the user.
+                System.out.println("OnetimeToken: reset token for " + userId);
+              } else {
+                // rotate token.
+                System.out.println("OnetimeToken: update token for " + userId);
+              }
+            } else {
+              // this request not be guarded.
+              System.out.println("OnetimeToken: ignore method " + method.name());
+            }
+          } else {
+            // user id missing.
+            System.out.println("OnetimeToken: user id missing");
+          }
+
           RequestOptions requestOptions = copyFromRequest(requestorContext);
           HttpServerResponse responseToRequestor = requestorContext.response();
 
