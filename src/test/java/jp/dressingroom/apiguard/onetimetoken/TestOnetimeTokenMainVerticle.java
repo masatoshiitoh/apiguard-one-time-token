@@ -3,6 +3,7 @@ package jp.dressingroom.apiguard.onetimetoken;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.client.WebClient;
@@ -50,7 +51,7 @@ public class TestOnetimeTokenMainVerticle {
     System.setProperty("onetimetoken.redis.port", "6379");
 
     System.setProperty("onetimetoken.guard.methods", "GET,POST");
-    System.setProperty("onetimetoken.initialize.paths", "/init,/reinit");
+    System.setProperty("onetimetoken.initialize.paths", "/init");
     System.setProperty("onetimetoken.userid.parameter", "test_uid");
 
     vertx.deployVerticle(new HttpResponderMainVerticle(), testContext.succeeding(id -> testContext.completeNow()));
@@ -74,6 +75,9 @@ public class TestOnetimeTokenMainVerticle {
     client.get(18888, "localhost", "/hello")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
+
+        assertTrue(response.statusCode() == 200, "/hello response is not 200");
+
         assertTrue(response.body().equals("Hello"));
         assertTrue(response.headers().contains("httpresponder"));
         assertTrue(response.headers().get("httpresponder").equals("true"));
@@ -82,14 +86,26 @@ public class TestOnetimeTokenMainVerticle {
   }
 
   @Test
-  void onetimeTokenHttpReverseProxyDeployed(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  void onetimeTokenHttpReverseProxyDeployed200(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    client.get(18891, "localhost", "/hello?test_uid=123")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200, "/hello?test_uid=123 response is not 200");
+        assertTrue(response.headers().contains("httpresponder"));
+        assertTrue(response.headers().get("httpresponder").equals("true"));
+        testContext.completeNow();
+      })));
+  }
+  @Test
+  void onetimeTokenHttpReverseProxyDeployed400(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
 
     client.get(18891, "localhost", "/")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertTrue(response.headers().contains("httpresponder"));
-        assertTrue(response.headers().get("httpresponder").equals("true"));
+        assertTrue(response.statusCode() == 400, "/hello without test_uid response is not 400 BAD REQUEST");
         testContext.completeNow();
       })));
   }
@@ -155,6 +171,7 @@ public class TestOnetimeTokenMainVerticle {
       }
     });
   }
+
   @Test
   void onetimeTokenGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
@@ -164,28 +181,35 @@ public class TestOnetimeTokenMainVerticle {
       .send(testContext.succeeding(r1 -> testContext.verify(() -> {
         System.out.println("r1:" + r1.body());
 
-        assertTrue(r1.statusCode() == 200);
-        assertTrue(r1.headers().contains("guardtoken"));
-        assertTrue(r1.headers().get("guardtoken").equals("true"));
+        assertTrue(r1.statusCode() == 200, "/init response is not 200");
+        assertTrue(r1.headers().contains("guardtoken"), "/init response not have guardtoken header");
+        String r1Token = r1.headers().get("guardtoken");
+        System.out.println("r1 token is " + r1Token);
 
-
-        client.get(18891, "localhost", "/api?test_uid=123")
+        client//.request(HttpMethod.GET,requestOptions)
+          .get(18891, "localhost", "/api?test_uid=123")
           .as(BodyCodec.string())
+          .putHeader("guardtoken", r1Token)
           .send(testContext.succeeding(r2 -> testContext.verify(() -> {
             System.out.println("r2:" + r2.body());
 
-            assertTrue(r2.statusCode() == 200);
-            assertTrue(r2.headers().contains("guardtoken"));
-            assertTrue(r2.headers().get("guardtoken").equals("true"));
+            assertTrue(r2.statusCode() == 200, "/api (r2) response is not 200 ... " + r2.statusCode());
+            assertTrue(r2.headers().contains("guardtoken"), "/api (r2) response not have guardtoken header");
+            String r2Token = r2.headers().get("guardtoken");
+            System.out.println("r2 token is " + r2Token);
+            assertTrue(! (r1.equals(r2)), "same token returned for r2");
 
             client.get(18891, "localhost", "/api?test_uid=123")
               .as(BodyCodec.string())
+              .putHeader("guardtoken", r2Token)
               .send(testContext.succeeding(r3 -> testContext.verify(() -> {
                 System.out.println("r3:" + r3.body());
 
-                assertTrue(r3.statusCode() == 200);
-                assertTrue(r3.headers().contains("guardtoken"));
-                assertTrue(r3.headers().get("guardtoken").equals("true"));
+                assertTrue(r3.statusCode() == 200, "/api (r3) response is not 200");
+                assertTrue(r3.headers().contains("guardtoken"), "/api (r3) response not have guardtoken header");
+                String r3Token = r3.headers().get("guardtoken");
+                System.out.println("r3 token is " + r3Token);
+                assertTrue(! (r2.equals(r3)), "same token returned for r3");
 
                 testContext.completeNow();
               })));
@@ -193,17 +217,17 @@ public class TestOnetimeTokenMainVerticle {
       })));
   }
 
-  @Test
-  void onetimeTokenMethodGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
-    WebClient client = WebClient.create(vertx);
+//  @Test
+//  void onetimeTokenMethodGuardCheckNoGuard(Vertx vertx, VertxTestContext testContext) throws Throwable {
+//    WebClient client = WebClient.create(vertx);
+//
+//    // OPTIONS method is not for guard. So, guarding path (/init) does not rejected without test_uid parameter.
+//    client.request(HttpMethod.OPTIONS, 18891, "localhost", "/init")
+//      .as(BodyCodec.string())
+//      .send(testContext.succeeding(response -> testContext.verify(() -> {
+//        assertTrue(response.statusCode() == 200, "/init response is not 400");
+//        testContext.completeNow();
+//      })));
+//  }
 
-    client.request(HttpMethod.OPTIONS, 18891, "localhost", "/init")
-      .as(BodyCodec.string())
-      .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertTrue(response.statusCode() == 200);
-        assertTrue(! response.headers().contains("guardtoken"));
-        assertTrue(! response.headers().get("guardtoken").equals("true"));
-        testContext.completeNow();
-      })));
-  }
 }

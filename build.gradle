@@ -21,6 +21,10 @@ application {
   mainClassName = 'io.vertx.core.Launcher'
 }
 
+tasks.withType(JavaCompile) {
+  options.compilerArgs << '-Xlint:deprecation'
+}
+
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 
