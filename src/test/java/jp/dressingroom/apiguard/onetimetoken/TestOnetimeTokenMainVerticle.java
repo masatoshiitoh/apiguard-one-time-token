@@ -89,10 +89,10 @@ public class TestOnetimeTokenMainVerticle {
   void onetimeTokenHttpReverseProxyDeployed200(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
 
-    client.get(18891, "localhost", "/hello?test_uid=123")
+    client.get(18891, "localhost", "/init?test_uid=00008")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertTrue(response.statusCode() == 200, "/hello?test_uid=123 response is not 200");
+        assertTrue(response.statusCode() == 200, "/init?test_uid=00008 response is not 200");
         assertTrue(response.headers().contains("httpresponder"));
         assertTrue(response.headers().get("httpresponder").equals("true"));
         testContext.completeNow();
@@ -176,39 +176,40 @@ public class TestOnetimeTokenMainVerticle {
   void onetimeTokenGuardCheck(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
 
-    client.get(18891, "localhost", "/init?test_uid=123")
+    // this 'client' represents game clients. so, client should be set 'guardtoken' for each call.
+
+    client.get(18891, "localhost", "/init?test_uid=00011")
       .as(BodyCodec.string())
       .send(testContext.succeeding(r1 -> testContext.verify(() -> {
-        System.out.println("r1:" + r1.body());
+        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
 
         assertTrue(r1.statusCode() == 200, "/init response is not 200");
         assertTrue(r1.headers().contains("guardtoken"), "/init response not have guardtoken header");
         String r1Token = r1.headers().get("guardtoken");
-        System.out.println("r1 token is " + r1Token);
+        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
 
-        client//.request(HttpMethod.GET,requestOptions)
-          .get(18891, "localhost", "/api?test_uid=123")
-          .as(BodyCodec.string())
+        client.get(18891, "localhost", "/api2?test_uid=00011")
           .putHeader("guardtoken", r1Token)
+          .as(BodyCodec.string())
           .send(testContext.succeeding(r2 -> testContext.verify(() -> {
-            System.out.println("r2:" + r2.body());
+            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
 
-            assertTrue(r2.statusCode() == 200, "/api (r2) response is not 200 ... " + r2.statusCode());
-            assertTrue(r2.headers().contains("guardtoken"), "/api (r2) response not have guardtoken header");
+            assertTrue(r2.statusCode() == 200, "/api2 (r2) response is not 200. response was " + r2.statusCode());  // << test fails HERES
+            assertTrue(r2.headers().contains("guardtoken"), "/api2 (r2) response not have guardtoken header");
             String r2Token = r2.headers().get("guardtoken");
-            System.out.println("r2 token is " + r2Token);
+            System.out.println("onetimeTokenGuardCheck /api2 (r2) generated token:" + r2Token);
             assertTrue(! (r1.equals(r2)), "same token returned for r2");
 
-            client.get(18891, "localhost", "/api?test_uid=123")
-              .as(BodyCodec.string())
+            client.get(18891, "localhost", "/api3?test_uid=00011")
               .putHeader("guardtoken", r2Token)
+              .as(BodyCodec.string())
               .send(testContext.succeeding(r3 -> testContext.verify(() -> {
-                System.out.println("r3:" + r3.body());
+                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
 
-                assertTrue(r3.statusCode() == 200, "/api (r3) response is not 200");
-                assertTrue(r3.headers().contains("guardtoken"), "/api (r3) response not have guardtoken header");
+                assertTrue(r3.statusCode() == 200, "/api3 (r3) response is not 200");
+                assertTrue(r3.headers().contains("guardtoken"), "/api3 (r3) response not have guardtoken header");
                 String r3Token = r3.headers().get("guardtoken");
-                System.out.println("r3 token is " + r3Token);
+                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
                 assertTrue(! (r2.equals(r3)), "same token returned for r3");
 
                 testContext.completeNow();
@@ -217,17 +218,17 @@ public class TestOnetimeTokenMainVerticle {
       })));
   }
 
-//  @Test
-//  void onetimeTokenMethodGuardCheckNoGuard(Vertx vertx, VertxTestContext testContext) throws Throwable {
-//    WebClient client = WebClient.create(vertx);
-//
-//    // OPTIONS method is not for guard. So, guarding path (/init) does not rejected without test_uid parameter.
-//    client.request(HttpMethod.OPTIONS, 18891, "localhost", "/init")
-//      .as(BodyCodec.string())
-//      .send(testContext.succeeding(response -> testContext.verify(() -> {
-//        assertTrue(response.statusCode() == 200, "/init response is not 400");
-//        testContext.completeNow();
-//      })));
-//  }
+  @Test
+  void onetimeTokenMethodGuardCheckNoGuard(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    WebClient client = WebClient.create(vertx);
+
+    // OPTIONS method is not for guard. So, guarding path (/init) does not rejected without test_uid parameter.
+    client.request(HttpMethod.OPTIONS, 18891, "localhost", "/init")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertTrue(response.statusCode() == 200, "/init response is not 400");
+        testContext.completeNow();
+      })));
+  }
 
 }

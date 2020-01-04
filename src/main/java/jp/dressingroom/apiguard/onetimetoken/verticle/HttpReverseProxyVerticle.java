@@ -44,8 +44,8 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         Arrays.stream(methodsConfig.split(",")).forEach(s -> guardMethods.add(s));
         Arrays.stream(initializePathsConfig.split(",")).forEach(s -> pathsWithoutToken.add(s));
 
-        System.out.println("guarding methods:" + guardMethods.toString());
-        System.out.println("initialize paths:" + pathsWithoutToken.toString());
+//        System.out.println("guarding methods:" + guardMethods.toString());
+//        System.out.println("initialize paths:" + pathsWithoutToken.toString());
 
         userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "userid");
 
@@ -101,196 +101,198 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
           System.out.println("path is:" + path);
           System.out.println("userId is:" + userId);
 
-          if (userId != null) {
-            // user id is passed by requester.
-            if (guardMethods.contains(method.name().toUpperCase())) {
+          if (guardMethods.contains(method.name().toUpperCase())) {
+            if (userId != null) {
+              // user id is passed by requester.
+
               // this request must be guarded with onetime token.
               if (pathsWithoutToken.contains(path)) {
-                // TODO: following code - work in progress. finish this.
-
+                // this path is initializer.
                 // initialize token to the user.
+
                 System.out.println("OnetimeToken: init token for " + userId);
                 eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_INIT.value(), userId, resetRequest -> {
                   // call proxy, return 200, and reset user's token (not 200, don't change token)
-                  RequestOptions requestOptions = copyFromRequest(requestorContext);
-                  HttpServerResponse responseToRequestor = requestorContext.response();
+                  if (resetRequest.succeeded() && resetRequest.result() != null) {
+                    // reset OK!
+                    String token = resetRequest.result().body().toString();
 
-                  client
-                    .request(method, requestOptions)
-                    .ssl(requestOptions.isSsl())
-                    .sendBuffer(
-                      requestorContext.getBody(),
-                      originRequest -> {
-                        if (originRequest.succeeded()) {
-                          HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                          int statusCode = responseFromOrigin.statusCode();
-                          HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
+                    RequestOptions requestOptions = copyFromRequest(requestorContext);
+                    HttpServerResponse responseToRequestor = requestorContext.response();
+                    client
+                      .request(method, requestOptions)
+                      .ssl(requestOptions.isSsl())
+                      .sendBuffer(
+                        requestorContext.getBody(),
+                        originRequest -> {
+                          if (originRequest.succeeded()) {
+                            HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                            int statusCode = responseFromOrigin.statusCode();
+                            HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
 
-                          responseToRequestor.headers().setAll(responseFromOrigin.headers());
-                          responseToRequestor.headers().set("guardtoken", "initialtoken");
+                            responseToRequestor.headers().setAll(responseFromOrigin.headers());
+                            responseToRequestor.headers().set("guardtoken", token);
 
-                          if (originRequest.result().body() != null) {
-                            responseToRequestor.write(originRequest.result().body());
+                            if (originRequest.result().body() != null) {
+                              responseToRequestor.write(originRequest.result().body());
+                            }
+
+                            responseToRequestor
+                              .setStatusCode(originRequest.result().statusCode())
+                              .end();
+                          } else {
+                            responseToRequestor
+                              .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
+                              .end("Origin request failed.");
                           }
+                        });
 
-                          responseToRequestor
-                            .setStatusCode(originRequest.result().statusCode())
-                            .end();
-                        } else {
-                          responseToRequestor
-                            .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
-                            .end("Origin request failed.");
-                        }
-                      });
+                  } else {
+                    // reset failed.
+                    HttpServerResponse responseToRequestor = requestorContext.response();
+                    responseToRequestor.setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value());
+                    responseToRequestor.end();
+                  }
+
                 });
 
               } else {
-                // TODO: following code - work in progress. finish this.
+                // this path needs user id and token. (verify and update)
 
                 // rotate token.
-
                 String guardToekn = requestorContext.request().getHeader("guardtoken");
-                System.out.println("OnetimeToken: verify token for:" + userId + " passed token is:" + guardToekn);
-                JsonObject verifyRequestContent = new JsonObject()
-                  .put("userId", userId)
-                  .put("token", guardToekn);
-                eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_VERIFY.value(), verifyRequestContent, verifyRequest -> {
-                  // verify token
-                  if (verifyRequest.succeeded()) {
-                    System.out.println("OnetimeTokenVerticle replys " + verifyRequest.result().body().toString());
-                    if (verifyRequest.result().body().equals(Boolean.TRUE)) {
-                      // verify ok
-                      System.out.println("OnetimeToken: verify token replies TRUE");
+                if (guardToekn != null) {
+                  System.out.println("OnetimeToken: verify token for:" + userId + " passed token is:" + guardToekn);
+                  JsonObject verifyRequestContent = new JsonObject()
+                    .put("user", userId)
+                    .put("token", guardToekn);
+                  eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_VERIFY.value(), verifyRequestContent, verifyRequest -> {
+                    // verify token
+                    if (verifyRequest.succeeded()) {
+                      System.out.println("OnetimeTokenRedisVerticle replys " + verifyRequest.result().body().toString());
+                      if (verifyRequest.result().body().equals(Boolean.TRUE)) {
+                        // verify ok
+                        // call proxy, return 200, and reset user's token (not 200, don't change token)
 
-                      // call proxy, return 200, and reset user's token (not 200, don't change token)
+                        RequestOptions requestOptions = copyFromRequest(requestorContext);
+                        HttpServerResponse responseToRequestor = requestorContext.response();
 
-                      RequestOptions requestOptions = copyFromRequest(requestorContext);
-                      HttpServerResponse responseToRequestor = requestorContext.response();
+                        client
+                          .request(method, requestOptions)
+                          .ssl(requestOptions.isSsl())
+                          .sendBuffer(
+                            requestorContext.getBody(),
+                            originRequest -> {
+                              if (originRequest.succeeded()) {
+                                if (originRequest.result().statusCode() == 200) {
+                                  eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_UPDATE.value(), userId, ur -> {
+                                    if (ur.succeeded() && ur.result().body() != null) {
+                                      // update ok.
+                                      String nextToken = ur.result().body().toString();
+                                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                                      int statusCode = responseFromOrigin.statusCode();
+                                      HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
 
-                      client
-                        .request(method, requestOptions)
-                        .ssl(requestOptions.isSsl())
-                        .sendBuffer(
-                          requestorContext.getBody(),
-                          originRequest -> {
-                            if (originRequest.succeeded()) {
-                              HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                              int statusCode = responseFromOrigin.statusCode();
-                              HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
+                                      responseToRequestor.headers().setAll(responseFromOrigin.headers());
+                                      responseToRequestor.headers().set("guardtoken", nextToken);
 
-                              responseToRequestor.headers().setAll(responseFromOrigin.headers());
-                              responseToRequestor.headers().set("guardtoken", "none");
-                              if (originRequest.result().body() != null) {
-                                responseToRequestor.write(originRequest.result().body());
+                                      if (originRequest.result().body() != null) {
+                                        responseToRequestor.write(originRequest.result().body());
+                                      }
+                                      responseToRequestor
+                                        .setStatusCode(originRequest.result().statusCode())
+                                        .end();
+                                    } else {
+                                      // guard token update failed.
+                                      responseToRequestor.headers().set("guardtoken", guardToekn);
+                                      responseToRequestor
+                                        .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
+                                        .end("Origin request failed.");
+                                    }
+                                  });
+                                } else {
+                                  responseToRequestor.headers().set("guardtoken", guardToekn);
+                                  responseToRequestor
+                                    .setStatusCode(originRequest.result().statusCode())
+                                    .end(originRequest.result().body());
+                                }
+                              } else {
+                                // proxy call failed. don't change guard token status.
+                                responseToRequestor.headers().set("guardtoken", guardToekn);
+                                responseToRequestor
+                                  .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
+                                  .end("Origin request failed.");
                               }
-                              responseToRequestor
-                                .setStatusCode(originRequest.result().statusCode())
-                                .end();
-                            } else {
-                              responseToRequestor.headers().set("guardtoken", "none");
-                              responseToRequestor
-                                .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
-                                .end("Origin request failed.");
-                            }
-                          });
+                            });
+                      } else {
+                        // not valid token!
+                        System.out.println("OnetimeToken: verify token replies FALSE");
+                        // return BAD REQUEST!!
+                        HttpServerResponse responseToRequestor = requestorContext.response();
+                        responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
+                        responseToRequestor.end();
 
-
-
-                      System.out.println("OnetimeToken: update token for " + userId);
-                      eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_UPDATE.value(), userId, resetRequest -> {
-                      });
-                    } else {
-                      // not valid token!
-                      System.out.println("OnetimeToken: verify token replies FALSE");
-                      // return BAD REQUEST!!
-                      HttpServerResponse responseToRequestor = requestorContext.response();
-                      responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
-                      responseToRequestor.end();
-
+                      }
                     }
-                  }
-                });
+                  });
+                } else {
+                  System.out.println("OnetimeToken: user id passed, but guardtoken missing.");
+                  // return BAD REQUEST
+                  // don't change any token.
+                  HttpServerResponse responseToRequestor = requestorContext.response();
+                  responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
+                  responseToRequestor.end();
+                }
 
               }
             } else {
-              // this request not be guarded.
-              System.out.println("OnetimeToken: ignore method " + method.name());
+              // user id missing.
+              System.out.println("OnetimeToken: user id missing");
 
-              // TODO: following code - work in progress. finish this.
-              // just proxy it.
-              // don't change token.
-
-              RequestOptions requestOptions = copyFromRequest(requestorContext);
+              // return BAD REQUEST
+              // don't change any token.
               HttpServerResponse responseToRequestor = requestorContext.response();
-
-              client
-                .request(method, requestOptions)
-                .ssl(requestOptions.isSsl())
-                .sendBuffer(
-                  requestorContext.getBody(),
-                  originRequest -> {
-                    if (originRequest.succeeded()) {
-                      HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-                      int statusCode = responseFromOrigin.statusCode();
-                      HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
-
-                      responseToRequestor.headers().setAll(responseFromOrigin.headers());
-                      responseToRequestor.headers().add("guardtoken", "none");
-                      if (originRequest.result().body() != null) {
-                        responseToRequestor.write(originRequest.result().body());
-                      }
-                      responseToRequestor
-                        .setStatusCode(originRequest.result().statusCode())
-                        .end();
-                    } else {
-                      responseToRequestor.headers().add("guardtoken", "none");
-                      responseToRequestor
-                        .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
-                        .end("Origin request failed.");
-                    }
-                  });
-
+              responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
+              responseToRequestor.end();
             }
+
           } else {
-            // user id missing.
-            System.out.println("OnetimeToken: user id missing");
+            // this request not be guarded.
+            System.out.println("OnetimeToken: ignore method " + method.name());
 
-            // return BAD REQUEST
-            // don't change any token.
+            // TODO: test following code.
+            // just proxy it.
+            // don't change token.
+
+            RequestOptions requestOptions = copyFromRequest(requestorContext);
             HttpServerResponse responseToRequestor = requestorContext.response();
-            responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
-            responseToRequestor.end();
-          }
 
-//          RequestOptions requestOptions = copyFromRequest(requestorContext);
-//          HttpServerResponse responseToRequestor = requestorContext.response();
-//
-//          client
-//            .request(method, requestOptions)
-//            .ssl(requestOptions.isSsl())
-//            .sendBuffer(
-//              requestorContext.getBody(),
-//              originRequest -> {
-//                if (originRequest.succeeded()) {
-//                  HttpResponse<Buffer> responseFromOrigin = originRequest.result();
-//                  int statusCode = responseFromOrigin.statusCode();
-//                  HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
-//
-//                  responseToRequestor.headers().setAll(responseFromOrigin.headers());
-//                  responseToRequestor.headers().add("guardtoken", "none");
-//                  if (originRequest.result().body() != null) {
-//                    responseToRequestor.write(originRequest.result().body());
-//                  }
-//                  responseToRequestor
-//                    .setStatusCode(originRequest.result().statusCode())
-//                    .end();
-//                } else {
-//                  responseToRequestor.headers().add("guardtoken", "none");
-//                  responseToRequestor
-//                    .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
-//                    .end("Origin request failed.");
-//                }
-//              });
+            client
+              .request(method, requestOptions)
+              .ssl(requestOptions.isSsl())
+              .sendBuffer(
+                requestorContext.getBody(),
+                originRequest -> {
+                  if (originRequest.succeeded()) {
+                    HttpResponse<Buffer> responseFromOrigin = originRequest.result();
+                    int statusCode = responseFromOrigin.statusCode();
+                    HttpStatusCodes status = HttpStatusCodes.getHttpStatusCode(statusCode);
+
+                    responseToRequestor.headers().setAll(responseFromOrigin.headers());
+                    if (originRequest.result().body() != null) {
+                      responseToRequestor.write(originRequest.result().body());
+                    }
+                    responseToRequestor
+                      .setStatusCode(originRequest.result().statusCode())
+                      .end();
+                  } else {
+                    responseToRequestor
+                      .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
+                      .end("Origin request failed.");
+                  }
+                });
+
+          }
         }
       );
     };

@@ -13,6 +13,7 @@ public enum ConfigKeyNames {
   ONETIME_TOKEN_GUARD_METHODS("onetimetoken.guard.methods"),
   ONETIME_TOKEN_INITIALIZE_PATHS("onetimetoken.initialize.paths"),
   ONETIME_TOKEN_USER_ID_PARAM_NAME("onetimetoken.userid.parameter"),
+  ONETIME_TOKEN_TOKEN_EXPIRE_SECONDS("onetimetoken.expire.seconds"),
   ;
 
   private final String text;
