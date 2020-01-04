@@ -222,11 +222,12 @@ public class TestOnetimeTokenMainVerticle {
   void onetimeTokenMethodGuardCheckNoGuard(Vertx vertx, VertxTestContext testContext) throws Throwable {
     WebClient client = WebClient.create(vertx);
 
-    // OPTIONS method is not for guard. So, guarding path (/init) does not rejected without test_uid parameter.
+    // OPTIONS method is not for guard.
+    // So, guarding path (/init) does not rejected without test_uid parameter.
     client.request(HttpMethod.OPTIONS, 18891, "localhost", "/init")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertTrue(response.statusCode() == 200, "/init response is not 400");
+        assertTrue(response.statusCode() == 200, "/init response is not 200 for OPTIONS call");
         testContext.completeNow();
       })));
   }

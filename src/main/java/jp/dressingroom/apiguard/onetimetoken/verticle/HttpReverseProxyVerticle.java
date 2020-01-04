@@ -44,9 +44,6 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
         Arrays.stream(methodsConfig.split(",")).forEach(s -> guardMethods.add(s));
         Arrays.stream(initializePathsConfig.split(",")).forEach(s -> pathsWithoutToken.add(s));
 
-//        System.out.println("guarding methods:" + guardMethods.toString());
-//        System.out.println("initialize paths:" + pathsWithoutToken.toString());
-
         userIdParamName = result.getString(ConfigKeyNames.ONETIME_TOKEN_USER_ID_PARAM_NAME.value(), "userid");
 
         // setup proxy client
@@ -260,7 +257,6 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
             // this request not be guarded.
             System.out.println("OnetimeToken: ignore method " + method.name());
 
-            // TODO: test following code.
             // just proxy it.
             // don't change token.
 
