@@ -95,9 +95,14 @@ public class OnetimeTokenRedisVerticle extends AbstractVerticle {
 
       RedisAPI redis = RedisAPI.api(redisClient);
       redis.get(userId, ar -> {
-        if (ar.succeeded() && ar.result().toString().equals(token)) {
-          System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verified  "+ userId +" token");
-          messageHandler.reply(Boolean.TRUE);
+        if (ar.succeeded()) {
+          if (ar.result().toString().equals(token)) {
+            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verified  " + userId + " token");
+            messageHandler.reply(Boolean.TRUE);
+          } else {
+            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: token mismatch  " + userId + " token");
+            messageHandler.reply(Boolean.FALSE);
+          }
         } else {
           System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verify "+ userId +"  failed");
           messageHandler.fail(1, "oneTimeTokenResetHandler: reset token failed.");
