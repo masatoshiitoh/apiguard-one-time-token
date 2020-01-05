@@ -1,62 +1,109 @@
-= Apiguard
-
-image:https://img.shields.io/badge/vert.x-3.8.3-purple.svg[link="https://vertx.io"]
-
-This application was generated using http://start.vertx.io
+= Apiguard ONE TIME TOKEN
 
 == What is this?
 
-Apiguard is a HTTP proxy to add following features to your web api servers.
+Apiguard ONE TIME TOKEN is a HTTP proxy to control with 'One time token'.
 
-* Guard with Onetime token
-* Payload encryption and decryption
+=== how to use
 
-=== Guard with Onetime token
+Token is passed via request / response header 'guardtoken'.
 
+1: Initialize session
 
-=== Payload encryption and decryption
-
-
-
-- requirement
-
-Redis : response cache
-
-
-
-==
-
-
-
-== How to try
-
-
-
-
-== Building
-
-To launch your tests:
 ```
-./gradlew clean test
+http://example.com/login?userid=foo
+```
+* Client receive next token on response header 'guardtoken'
+
+2: Use session
+
+```
+http://example.com/someapi?userid=foo
+```
+* Client send token on request header 'guardtoken'.
+* Client receive next token on response header 'guardtoken'.
+
+=== about token
+
+Apiguard ONE TIME TOKEN use string format UUID type 4 as a token.
+
+So, token is a 36 characters string.
+
+== requirement
+
+* Java JRE (11.0~)
+* Redis server (2.8~) : <- holds user tokens.
+
+== Configuration
+
+Set following parameters via environment, or system properties.
+
+=== onetimetoken.server.port
+
+listening port.
+
+=== onetimetoken.proxy.hostname
+
+proxy hostname
+
+=== onetimetoken.proxy.port
+
+proxy port
+
+=== onetimetoken.proxy.ua
+
+user agent string to access proxy host.
+
+=== onetimetoken.proxy.usessl
+
+is proxy server uses HTTPS.
+
+set "true" or "false".
+
+
+=== onetimetoken.redis.hostname
+
+Redis server's hostname.
+
+default: localhost
+
+=== onetimetoken.redis.port
+
+Redis server's port.
+
+default: 6379
+
+=== onetimetoken.guard.methods
+
+default: GET,POST
+
+Set methods you want to guard with one time token.
+
+Concatenate with ','(comma) , without spaces.
+
+
+=== onetimetoken.initialize.paths
+
+default: /login,/init
+
+Set paths to initialize one time token.
+
+Concatenate with ','(comma) , without spaces.
+
+=== onetimetoken.userid.parameter
+
+default: userid
+
+Set query parameter name to identify user's ID like following ->
+
+```
+http://example.com/login?userid=foo
 ```
 
-To package your application:
-```
-./gradlew clean assemble
-```
 
-To run your application:
-```
-./gradlew clean run
-```
+=== onetimetoken.expire.seconds
 
+default: 300
 
-
-== Help
-
-* https://vertx.io/docs/[Vert.x Documentation]
-* https://stackoverflow.com/questions/tagged/vert.x?sort=newest&pageSize=15[Vert.x Stack Overflow]
-* https://groups.google.com/forum/?fromgroups#!forum/vertx[Vert.x User Group]
-* https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
-
+Set seconds to expire token.  default 300 means 300 seconds (= 5 minutes)
 
