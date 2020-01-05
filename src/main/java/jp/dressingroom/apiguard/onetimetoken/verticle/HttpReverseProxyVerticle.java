@@ -94,9 +94,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
           HttpMethod method = requestorContext.request().method();
           String path = requestorContext.request().path();
           String userId = requestorContext.request().getParam(userIdParamName);
-          System.out.println("method is:" + method.name());
-          System.out.println("path is:" + path);
-          System.out.println("userId is:" + userId);
+//          System.out.println("method is:" + method.name());
+//          System.out.println("path is:" + path);
+//          System.out.println("userId is:" + userId);
 
           if (guardMethods.contains(method.name().toUpperCase())) {
             if (userId != null) {
@@ -107,7 +107,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                 // this path is initializer.
                 // initialize token to the user.
 
-                System.out.println("OnetimeToken: init token for " + userId);
+//                System.out.println("OnetimeToken: init token for " + userId);
                 eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_INIT.value(), userId, resetRequest -> {
                   // call proxy, return 200, and reset user's token (not 200, don't change token)
                   if (resetRequest.succeeded() && resetRequest.result() != null) {
@@ -159,14 +159,14 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                 // rotate token.
                 String guardToekn = requestorContext.request().getHeader("guardtoken");
                 if (guardToekn != null) {
-                  System.out.println("OnetimeToken: verify token for:" + userId + " passed token is:" + guardToekn);
+//                  System.out.println("OnetimeToken: verify token for:" + userId + " passed token is:" + guardToekn);
                   JsonObject verifyRequestContent = new JsonObject()
                     .put("user", userId)
                     .put("token", guardToekn);
                   eventBus.request(ApiguardEventBusNames.ONETIME_TOKEN_VERIFY.value(), verifyRequestContent, verifyRequest -> {
                     // verify token
                     if (verifyRequest.succeeded()) {
-                      System.out.println("OnetimeTokenRedisVerticle replys " + verifyRequest.result().body().toString());
+//                      System.out.println("OnetimeTokenRedisVerticle replys " + verifyRequest.result().body().toString());
                       if (verifyRequest.result().body().equals(Boolean.TRUE)) {
                         // verify ok
                         // call proxy, return 200, and reset user's token (not 200, don't change token)
@@ -223,7 +223,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                             });
                       } else {
                         // not valid token!
-                        System.out.println("OnetimeToken: verify token replies FALSE");
+//                        System.out.println("OnetimeToken: verify token replies FALSE");
                         // return BAD REQUEST!!
                         HttpServerResponse responseToRequestor = requestorContext.response();
                         responseToRequestor.setStatusCode(HttpStatusCodes.BAD_REQUEST.value());
@@ -233,7 +233,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                     }
                   });
                 } else {
-                  System.out.println("OnetimeToken: user id passed, but guardtoken missing.");
+//                  System.out.println("OnetimeToken: user id passed, but guardtoken missing.");
                   // return BAD REQUEST
                   // don't change any token.
                   HttpServerResponse responseToRequestor = requestorContext.response();
@@ -244,7 +244,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
               }
             } else {
               // user id missing.
-              System.out.println("OnetimeToken: user id missing");
+//              System.out.println("OnetimeToken: user id missing");
 
               // return BAD REQUEST
               // don't change any token.
@@ -255,7 +255,7 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
           } else {
             // this request not be guarded.
-            System.out.println("OnetimeToken: ignore method " + method.name());
+//            System.out.println("OnetimeToken: ignore method " + method.name());
 
             // just proxy it.
             // don't change token.

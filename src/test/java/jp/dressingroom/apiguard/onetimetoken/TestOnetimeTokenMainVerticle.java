@@ -75,9 +75,7 @@ public class TestOnetimeTokenMainVerticle {
     client.get(18888, "localhost", "/hello")
       .as(BodyCodec.string())
       .send(testContext.succeeding(response -> testContext.verify(() -> {
-
         assertTrue(response.statusCode() == 200, "/hello response is not 200");
-
         assertTrue(response.body().equals("Hello"));
         assertTrue(response.headers().contains("httpresponder"));
         assertTrue(response.headers().get("httpresponder").equals("true"));
@@ -181,18 +179,18 @@ public class TestOnetimeTokenMainVerticle {
     client.get(18891, "localhost", "/init?test_uid=00011")
       .as(BodyCodec.string())
       .send(testContext.succeeding(r1 -> testContext.verify(() -> {
-        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
+//        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
 
         assertTrue(r1.statusCode() == 200, "/init response is not 200");
         assertTrue(r1.headers().contains("guardtoken"), "/init response not have guardtoken header");
         String r1Token = r1.headers().get("guardtoken");
-        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
+//        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
 
         client.get(18891, "localhost", "/api2?test_uid=00011")
           .putHeader("guardtoken", r1Token)
           .as(BodyCodec.string())
           .send(testContext.succeeding(r2 -> testContext.verify(() -> {
-            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
+//            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
 
             assertTrue(r2.statusCode() == 200, "/api2 (r2) response is not 200. response was " + r2.statusCode());  // << test fails HERES
             assertTrue(r2.headers().contains("guardtoken"), "/api2 (r2) response not have guardtoken header");
@@ -204,12 +202,12 @@ public class TestOnetimeTokenMainVerticle {
               .putHeader("guardtoken", r2Token)
               .as(BodyCodec.string())
               .send(testContext.succeeding(r3 -> testContext.verify(() -> {
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
 
                 assertTrue(r3.statusCode() == 200, "/api3 (r3) response is not 200");
                 assertTrue(r3.headers().contains("guardtoken"), "/api3 (r3) response not have guardtoken header");
                 String r3Token = r3.headers().get("guardtoken");
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
                 assertTrue(! (r2Token.equals(r3Token)), "same token returned for r3");
 
                 testContext.completeNow();
@@ -241,35 +239,35 @@ public class TestOnetimeTokenMainVerticle {
     client.post(18891, "localhost", "/init?test_uid=00011")
       .as(BodyCodec.string())
       .send(testContext.succeeding(r1 -> testContext.verify(() -> {
-        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
+//        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
 
         assertTrue(r1.statusCode() == 200, "/init response is not 200");
         assertTrue(r1.headers().contains("guardtoken"), "/init response not have guardtoken header");
         String r1Token = r1.headers().get("guardtoken");
-        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
+//        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
 
         client.post(18891, "localhost", "/api2?test_uid=00011")
           .putHeader("guardtoken", r1Token)
           .as(BodyCodec.string())
           .send(testContext.succeeding(r2 -> testContext.verify(() -> {
-            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
+//            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
 
             assertTrue(r2.statusCode() == 200, "/api2 (r2) response is not 200. response was " + r2.statusCode());  // << test fails HERES
             assertTrue(r2.headers().contains("guardtoken"), "/api2 (r2) response not have guardtoken header");
             String r2Token = r2.headers().get("guardtoken");
-            System.out.println("onetimeTokenGuardCheck /api2 (r2) generated token:" + r2Token);
+//            System.out.println("onetimeTokenGuardCheck /api2 (r2) generated token:" + r2Token);
             assertTrue(! (r1Token.equals(r2Token)), "same token returned for r2");
 
             client.post(18891, "localhost", "/api3?test_uid=00011")
               .putHeader("guardtoken", r2Token)
               .as(BodyCodec.string())
               .send(testContext.succeeding(r3 -> testContext.verify(() -> {
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
 
                 assertTrue(r3.statusCode() == 200, "/api3 (r3) response is not 200");
                 assertTrue(r3.headers().contains("guardtoken"), "/api3 (r3) response not have guardtoken header");
                 String r3Token = r3.headers().get("guardtoken");
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
                 assertTrue(! (r2Token.equals(r3Token)), "same token returned for r3");
 
                 testContext.completeNow();
@@ -287,19 +285,19 @@ public class TestOnetimeTokenMainVerticle {
     client.get(18891, "localhost", "/init?test_uid=00011")
       .as(BodyCodec.string())
       .send(testContext.succeeding(r1 -> testContext.verify(() -> {
-        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
+//        System.out.println("onetimeTokenGuardCheck /init body:" + r1.body());
 
         assertTrue(r1.statusCode() == 200, "/init response is not 200");
         assertTrue(r1.headers().contains("guardtoken"), "/init response not have guardtoken header");
         String r1Token = r1.headers().get("guardtoken");
-        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
+//        System.out.println("onetimeTokenGuardCheck init generated token:" + r1Token);
 
         // check invalid token with /api2
         client.get(18891, "localhost", "/api2?test_uid=00011")
           .putHeader("guardtoken", "mismatchtoken" + r1Token)
           .as(BodyCodec.string())
           .send(testContext.succeeding(r2 -> testContext.verify(() -> {
-            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
+//            System.out.println("onetimeTokenGuardCheck /api2 (r2) body:" + r2.body());
             assertTrue(r2.statusCode() == 400, "/api2 (r2) response is not 400. response was " + r2.statusCode());  // << test fails HERES
 
             // check valid token with /api3
@@ -307,12 +305,12 @@ public class TestOnetimeTokenMainVerticle {
               .putHeader("guardtoken", r1Token)
               .as(BodyCodec.string())
               .send(testContext.succeeding(r3 -> testContext.verify(() -> {
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) body:" + r3.body());
 
                 assertTrue(r3.statusCode() == 200, "/api3 (r3) response is not 200");
                 assertTrue(r3.headers().contains("guardtoken"), "/api3 (r3) response not have guardtoken header");
                 String r3Token = r3.headers().get("guardtoken");
-                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
+//                System.out.println("onetimeTokenGuardCheck /api3 (r3) generated token:" + r3Token);
                 assertTrue(! (r1Token.equals(r3Token)), "same token returned for r3");
 
                 testContext.completeNow();

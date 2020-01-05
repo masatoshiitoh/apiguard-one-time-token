@@ -77,10 +77,10 @@ public class OnetimeTokenRedisVerticle extends AbstractVerticle {
         generatedUuid.toString(), // VALUE
         res -> {
           if (res.succeeded() && res.result().toString().equals("OK")) {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenResetHandler: initialized "+ userId +" token to:" + generatedUuid.toString());
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenResetHandler: initialized "+ userId +" token to:" + generatedUuid.toString());
             messageHandler.reply(generatedUuid.toString());
           } else {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: initialize "+ userId +"  failed");
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: initialize "+ userId +"  failed");
             messageHandler.fail(1, "oneTimeTokenResetHandler: reset token failed.");
           }
         });
@@ -97,14 +97,14 @@ public class OnetimeTokenRedisVerticle extends AbstractVerticle {
       redis.get(userId, ar -> {
         if (ar.succeeded()) {
           if (ar.result().toString().equals(token)) {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verified  " + userId + " token");
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verified  " + userId + " token");
             messageHandler.reply(Boolean.TRUE);
           } else {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: token mismatch  " + userId + " token");
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: token mismatch  " + userId + " token");
             messageHandler.reply(Boolean.FALSE);
           }
         } else {
-          System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verify "+ userId +"  failed");
+//          System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenVerifyHandler: verify "+ userId +"  failed");
           messageHandler.fail(1, "oneTimeTokenResetHandler: reset token failed.");
         }
       });
@@ -124,10 +124,10 @@ public class OnetimeTokenRedisVerticle extends AbstractVerticle {
         generatedUuid.toString(), // VALUE
         res -> {
           if (res.succeeded() && res.result().toString().equals("OK")) {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: updated "+ userId +" token to:" + generatedUuid.toString());
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: updated "+ userId +" token to:" + generatedUuid.toString());
             messageHandler.reply(generatedUuid.toString());
           } else {
-            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: update "+ userId +"  failed");
+//            System.out.println("OnetimeTokenRedisVerticle.oneTimeTokenUpdateHandler: update "+ userId +"  failed");
             messageHandler.fail(1, "oneTimeTokenUpdateHandler: reset token failed.");
           }
         });
