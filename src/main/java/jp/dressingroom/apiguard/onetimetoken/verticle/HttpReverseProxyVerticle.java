@@ -129,6 +129,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
                             responseToRequestor.headers().setAll(responseFromOrigin.headers());
                             responseToRequestor.headers().set("guardtoken", token);
+                            String existingACAH = responseToRequestor.headers().get("Access-Control-Allow-Headers");
+                            String acah = (existingACAH == null ? "guardtoken" : existingACAH + ",guardtoken");
+                            responseToRequestor.headers().set("Access-Control-Allow-Headers", acah);
 
                             if (originRequest.result().body() != null) {
                               responseToRequestor.write(originRequest.result().body());
@@ -192,6 +195,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
 
                                       responseToRequestor.headers().setAll(responseFromOrigin.headers());
                                       responseToRequestor.headers().set("guardtoken", nextToken);
+                                      String existingACAH = responseToRequestor.headers().get("Access-Control-Allow-Headers");
+                                      String acah = (existingACAH == null ? "guardtoken" : existingACAH + ",guardtoken");
+                                      responseToRequestor.headers().set("Access-Control-Allow-Headers", acah);
 
                                       if (originRequest.result().body() != null) {
                                         responseToRequestor.write(originRequest.result().body());
@@ -202,6 +208,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                                     } else {
                                       // guard token update failed.
                                       responseToRequestor.headers().set("guardtoken", guardToekn);
+                                      String existingACAH = responseToRequestor.headers().get("Access-Control-Allow-Headers");
+                                      String acah = (existingACAH == null ? "guardtoken" : existingACAH + ",guardtoken");
+                                      responseToRequestor.headers().set("Access-Control-Allow-Headers", acah);
                                       responseToRequestor
                                         .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
                                         .end("Origin request failed.");
@@ -209,6 +218,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                                   });
                                 } else {
                                   responseToRequestor.headers().set("guardtoken", guardToekn);
+                                  String existingACAH = responseToRequestor.headers().get("Access-Control-Allow-Headers");
+                                  String acah = (existingACAH == null ? "guardtoken" : existingACAH + ",guardtoken");
+                                  responseToRequestor.headers().set("Access-Control-Allow-Headers", acah);
                                   responseToRequestor
                                     .setStatusCode(originRequest.result().statusCode())
                                     .end(originRequest.result().body());
@@ -216,6 +228,9 @@ public class HttpReverseProxyVerticle extends AbstractVerticle {
                               } else {
                                 // proxy call failed. don't change guard token status.
                                 responseToRequestor.headers().set("guardtoken", guardToekn);
+                                String existingACAH = responseToRequestor.headers().get("Access-Control-Allow-Headers");
+                                String acah = (existingACAH == null ? "guardtoken" : existingACAH + ",guardtoken");
+                                responseToRequestor.headers().set("Access-Control-Allow-Headers", acah);
                                 responseToRequestor
                                   .setStatusCode(HttpStatusCodes.INTERNAL_SERVER_ERROR.value())
                                   .end("Origin request failed.");
